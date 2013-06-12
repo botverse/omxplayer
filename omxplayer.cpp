@@ -144,6 +144,7 @@ void print_usage()
   printf("         -o / --adev  device            audio out device      : e.g. hdmi/local\n");
   printf("         -i / --info                    dump stream format and exit\n");
   printf("         -s / --stats                   pts and buffer stats\n");
+  printf("         -f / --lstats                  pts and buffer stats with line ending\n");
   printf("         -p / --passthrough             audio passthrough\n");
   printf("         -d / --deinterlace             deinterlacing\n");
   printf("         -w / --hw                      hw audio decoding\n");
@@ -473,6 +474,7 @@ int main(int argc, char *argv[])
   CRBP                  g_RBP;
   COMXCore              g_OMX;
   bool                  m_stats               = false;
+  bool                  m_lstats              = false;
   bool                  m_dump_format         = false;
   FORMAT_3D_T           m_3d                  = CONF_FLAGS_FORMAT_NONE;
   bool                  m_refresh             = false;
@@ -505,6 +507,7 @@ int main(int argc, char *argv[])
     { "aidx",         required_argument,  NULL,          'n' },
     { "adev",         required_argument,  NULL,          'o' },
     { "stats",        no_argument,        NULL,          's' },
+    { "lstats",       no_argument,        NULL,          'f' },
     { "passthrough",  no_argument,        NULL,          'p' },
     { "vol",          required_argument,  NULL,          vol_opt },
     { "deinterlace",  no_argument,        NULL,          'd' },
@@ -571,6 +574,9 @@ int main(int argc, char *argv[])
         break;
       case 's':
         m_stats = true;
+        break;
+      case 'f':
+        m_lstats = true;
         break;
       case 'o':
         deviceString = optarg;
@@ -1064,14 +1070,15 @@ int main(int argc, char *argv[])
       goto do_exit;
     }
 
-    if(m_stats)
+    if(m_stats || m_lstats)
     {
       static int count;
       if ((count++ & 15) == 0)
-         printf("V : %8.02f %8d %8d A : %8.02f %8.02f/%8.02f Cv : %8d Ca : %8d                            \r",
+         printf("V : %8.02f %8d %8d A : %8.02f %8.02f/%8.02f Cv : %8d Ca : %8d                            %1s",
              m_av_clock->OMXMediaTime(), m_player_video.GetDecoderBufferSize(), m_player_video.GetDecoderFreeSpace(),
              m_player_audio.GetCurrentPTS() / DVD_TIME_BASE - m_av_clock->OMXMediaTime() * 1e-6, m_player_audio.GetDelay(), m_player_audio.GetCacheTotal(),
-             m_player_video.GetCached(), m_player_audio.GetCached());
+             m_player_video.GetCached(), m_player_audio.GetCached(),
+             m_lstats ? "\n" : "\r");
     }
 
     if(m_omx_reader.IsEof() && !m_omx_pkt)
